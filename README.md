@@ -1,1 +1,1 @@
-# Amasa_Simple-Student-Information-System-with-Database
+Simple Student Information System with MySQL Database
