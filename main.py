@@ -28,6 +28,13 @@ def search(info): #Function for searching
     if myresult:
         for result in myresult:
             data.append(result)
+def codeToName(course_code): #Function to display corresponding name of course
+    sql = "SELECT * FROM course_info WHERE course_code = %s"
+    mycursor.execute(sql, (course_code, ))
+    myresult = mycursor.fetchall()
+    for code in myresult:
+        course = code
+    return course[1]
 
 class MainWindow(QMainWindow): #UI for Main Window
     def __init__(self):
@@ -68,7 +75,7 @@ class MainWindow(QMainWindow): #UI for Main Window
     def display(self, row, student): #Function to display
         self.tableWidget.setItem(row, 0, QtWidgets.QTableWidgetItem(student[0]))
         self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(student[1]))
-        course = self.codeToName(student[2])
+        course = codeToName(student[2])
         self.tableWidget.setItem(row, 2, QtWidgets.QTableWidgetItem(course))
         self.tableWidget.setItem(row, 3, QtWidgets.QTableWidgetItem(str(student[3])))  
         self.tableWidget.setItem(row, 4, QtWidgets.QTableWidgetItem(student[4]))
@@ -95,14 +102,6 @@ class MainWindow(QMainWindow): #UI for Main Window
             self.display(row, student)
             row=row+1
             
-    def codeToName(self, course_code): #Function to display corresponding name of course
-        sql = "SELECT * FROM course_info WHERE course_code = %s"
-        mycursor.execute(sql, (course_code, ))
-        myresult = mycursor.fetchall()
-        for code in myresult:
-            course = code
-        return course[1]
-    
     def editStudent(self): #Function for editing students
         addStudent.addPlainText()
         addStudent.correct = True
@@ -138,6 +137,8 @@ class addStudentScreen(QDialog): #UI for the screen for adding students
         self.idNumTextEdit = self.findChild(QTextEdit, "textEdit_2")
         self.nameTextEdit = self.findChild(QTextEdit, "textEdit_3")
         self.courseComboBox = self.findChild(QComboBox, "comboBox_3")
+        self.addItemsCourse()
+        
         self.yearComboBox = self.findChild(QComboBox, "comboBox_2")
         self.genderComboBox = self.findChild(QComboBox, "comboBox")
         
@@ -154,6 +155,13 @@ class addStudentScreen(QDialog): #UI for the screen for adding students
         self.showPopup = PopupWindow()
         self.showPopup.label.setText(text)
         self.showPopup.show()
+
+    def addItemsCourse(self):
+        sql = "SELECT course_code FROM course_info"
+        mycursor.execute(sql)
+        myresult = mycursor.fetchall()
+        for code in myresult:
+            self.courseComboBox.addItem(code[0])
         
     def addPlainText(self): #Function for inserting data to screen
         self.stud_list = data[0]
