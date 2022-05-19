@@ -1,5 +1,4 @@
 #Amasa, Sophia Nicolette C.
-#2020-0424
 #CCC151 CS2
 #Simple Student Information System
 
@@ -26,8 +25,9 @@ def search(info): #Function for searching
     sqlSearch = "SELECT * FROM students WHERE %s in (student_id, full_name)"
     mycursor.execute(sqlSearch, (info, ))
     myresult = mycursor.fetchall()
-    for result in myresult:
-        data.append(result)
+    if myresult:
+        for result in myresult:
+            data.append(result)
 
 class MainWindow(QMainWindow): #UI for Main Window
     def __init__(self):
@@ -113,13 +113,13 @@ class MainWindow(QMainWindow): #UI for Main Window
     def searchStudent(self): #Function for searching students
         info = self.idTextEdit.toPlainText()
         search(info)
-        sublist = data[0]
-        if sublist is None:
+        if not data:
             self.Popup('Student not Found')
         else:
+            sublist = data[0]
             self.display(0, sublist)
             self.tableWidget.setRowCount(1)
-        data.remove(sublist)
+            data.remove(sublist)
 
     def deleteStudent(self): #Function for deleting students
         stud_list = data[0]
@@ -195,7 +195,6 @@ class addStudentScreen(QDialog): #UI for the screen for adding students
             self.idNumTextEdit.setPlainText("")
             self.nameTextEdit.setPlainText("")
 
-            print(student_info)
             if self.edit:
                 student_info.append(self.stud_list[0])
                 sqlEdit = "UPDATE students SET student_id = %s, full_name = %s, course_code = %s, year_level = %s, gender = %s where student_id = %s"
