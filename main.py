@@ -28,13 +28,6 @@ def search(info): #Function for searching
     if myresult:
         for result in myresult:
             data.append(result)
-def codeToName(course_code): #Function to display corresponding name of course
-    sql = "SELECT * FROM course_info WHERE course_code = %s"
-    mycursor.execute(sql, (course_code, ))
-    myresult = mycursor.fetchall()
-    for code in myresult:
-        course = code
-    return course[1]
 
 class MainWindow(QMainWindow): #UI for Main Window
     def __init__(self):
@@ -58,6 +51,9 @@ class MainWindow(QMainWindow): #UI for Main Window
         self.clearButton = self.findChild(QPushButton, "pushButton_5")
         self.clearButton.clicked.connect(self.clearStudents)
 
+        self.coursesButton = self.findChild(QPushButton, "pushButton_6")
+        self.coursesButton.clicked.connect(self.gotoCoursesScreen)
+
         header = self.tableWidget.horizontalHeader()       
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
@@ -68,6 +64,9 @@ class MainWindow(QMainWindow): #UI for Main Window
     def gotoAddStudentScreen(self):
         widget.setCurrentIndex(widget.currentIndex()+1)
 
+    def gotoCoursesScreen(self):
+        widget.setCurrentIndex(widget.currentIndex()+2)
+
     def clearStudents(self): #Function to clear search box
         self.idTextEdit.setPlainText("")
         self.allStudents()
@@ -75,7 +74,7 @@ class MainWindow(QMainWindow): #UI for Main Window
     def display(self, row, student): #Function to display
         self.tableWidget.setItem(row, 0, QtWidgets.QTableWidgetItem(student[0]))
         self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(student[1]))
-        course = codeToName(student[2])
+        course = self.codeToName(student[2])
         self.tableWidget.setItem(row, 2, QtWidgets.QTableWidgetItem(course))
         self.tableWidget.setItem(row, 3, QtWidgets.QTableWidgetItem(str(student[3])))  
         self.tableWidget.setItem(row, 4, QtWidgets.QTableWidgetItem(student[4]))
@@ -102,6 +101,14 @@ class MainWindow(QMainWindow): #UI for Main Window
             self.display(row, student)
             row=row+1
             
+    def codeToName(self, course_code): #Function to display corresponding name of course
+        sql = "SELECT * FROM course_info WHERE course_code = %s"
+        mycursor.execute(sql, (course_code, ))
+        myresult = mycursor.fetchall()
+        for code in myresult:
+            course = code
+        return course[1]
+    
     def editStudent(self): #Function for editing students
         addStudent.addPlainText()
         addStudent.correct = True
@@ -138,7 +145,6 @@ class addStudentScreen(QDialog): #UI for the screen for adding students
         self.nameTextEdit = self.findChild(QTextEdit, "textEdit_3")
         self.courseComboBox = self.findChild(QComboBox, "comboBox_3")
         self.addItemsCourse()
-        
         self.yearComboBox = self.findChild(QComboBox, "comboBox_2")
         self.genderComboBox = self.findChild(QComboBox, "comboBox")
         
@@ -224,6 +230,121 @@ class addStudentScreen(QDialog): #UI for the screen for adding students
         mainwindow.allStudents()
         widget.setCurrentIndex(widget.currentIndex()-1)
 
+class listCourses(QDialog): #UI for the screen for courses
+    def __init__(self):
+        super(listCourses, self).__init__()
+        loadUi("courses.ui", self)
+
+        self.information = []
+        self.codeTextEdit = self.findChild(QTextEdit, "textEdit")
+        self.nameTextEdit = self.findChild(QTextEdit, "textEdit_2")
+        
+        self.addButton = self.findChild(QPushButton, "pushButton")
+        self.addButton.clicked.connect(self.addCourse)
+        
+        self.deleteButton = self.findChild(QPushButton, "pushButton_2")
+        self.deleteButton.clicked.connect(self.deleteCourse)
+        
+        self.editButton = self.findChild(QPushButton, "pushButton_3")
+        self.editButton.clicked.connect(self.editCourse)
+
+        self.xButton = self.findChild(QPushButton, "pushButton_4")
+        self.xButton.clicked.connect(self.mainMenu)
+
+        self.tableWidget.selectionModel().selectionChanged.connect(self.on_selectionChanged)
+        self.allCourses()
+        self.tableWidget.resizeColumnsToContents()
+
+    def addPlainText(self): #Function for inserting data to screen
+        self.codeTextEdit.setPlainText(self.information[0][0])
+        self.nameTextEdit.setPlainText(self.information[0][1])
+        
+    def display(self, row, course): #Function to display
+        self.tableWidget.setItem(row, 0, QtWidgets.QTableWidgetItem(course[0]))
+        self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(course[1]))
+        
+    def search(self, item): #Function for searching
+        sqlSearch = "SELECT * FROM course_info WHERE %s in (course_code, course)"
+        mycursor.execute(sqlSearch, (item, ))
+        myresult = mycursor.fetchall()
+        if myresult:
+            for result in myresult:
+                return result
+                
+    def on_selectionChanged(self, selected, deselected): #Function for getting item when clicked
+        for ix in selected.indexes():
+            if self.information:
+                self.information.pop(0)
+            it = self.tableWidget.item(ix.row(), ix.column())
+            self.it_text = it.text()
+            self.information.append(self.search(self.it_text))
+            self.addPlainText()
+
+    def addCourse(self): #Function for adding courses
+        course_info = []
+        
+        code = self.codeTextEdit.toPlainText()
+        course_info.append(code)
+        
+        name = self.nameTextEdit.toPlainText()
+        course_info.append(name)
+
+        sqlInsert = "INSERT INTO course_info VALUES (%s, %s)"
+        mycursor.execute(sqlInsert, course_info)
+        mydb.commit()
+
+        self.codeTextEdit.setPlainText("")
+        self.nameTextEdit.setPlainText("")
+
+        self.Popup('Course Added')
+            
+    def editCourse(self): #Function for editing courses
+        course_info = []
+        
+        code = self.codeTextEdit.toPlainText()
+        course_info.append(code)
+        
+        name = self.nameTextEdit.toPlainText()
+        course_info.append(name)
+
+        course_info.append(self.information[0][0])
+        
+        sqlEdit = "UPDATE course_info SET course_code = %s, course = %s where course_code = %s"
+        mycursor.execute(sqlEdit, course_info)
+        mydb.commit()
+
+        self.codeTextEdit.setPlainText("")
+        self.nameTextEdit.setPlainText("")
+
+        self.Popup('Course Added')
+
+    def deleteCourse(self): #Function for deleting courses
+        sqlDelete = "DELETE FROM course_info WHERE course_code = %s"
+        mycursor.execute(sqlDelete, (self.information[0][0], ))
+        mydb.commit()
+
+        self.codeTextEdit.setPlainText("")
+        self.nameTextEdit.setPlainText("")
+        
+        self.Popup('Course Deleted')
+            
+    def allCourses(self): #Function to display all courses on table
+        mycursor.execute("SELECT * FROM course_info")
+        data = mycursor.fetchall()
+        row=0
+        self.tableWidget.setRowCount(len(data))
+        for course in data:
+            self.display(row, course)
+            row=row+1
+            
+    def Popup(self, text): #Function to open Pop-up
+        self.showPopup = PopupWindow()
+        self.showPopup.label.setText(text)
+        self.showPopup.show()
+        
+    def mainMenu(self): #Function to go back to main menu
+        widget.setCurrentIndex(widget.currentIndex()-2)
+        
 class PopupWindow(QDialog): #UI for Pop-up
     def __init__(self):
         super(PopupWindow,self).__init__()
@@ -240,8 +361,9 @@ widget.addWidget(mainwindow)
 addStudent = addStudentScreen()
 widget.addWidget(addStudent)
 
+listcourses = listCourses()
+widget.addWidget(listcourses)
+
 widget.setFixedHeight(600)
 widget.setFixedWidth(1000)
 widget.show()
-
-        
