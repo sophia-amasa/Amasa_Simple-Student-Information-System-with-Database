@@ -238,6 +238,7 @@ class listCourses(QDialog): #UI for the screen for courses
         self.information = []
         self.codeTextEdit = self.findChild(QTextEdit, "textEdit")
         self.nameTextEdit = self.findChild(QTextEdit, "textEdit_2")
+        self.searchTextEdit = self.findChild(QTextEdit, "textEdit_3")
         
         self.addButton = self.findChild(QPushButton, "pushButton")
         self.addButton.clicked.connect(self.addCourse)
@@ -250,6 +251,12 @@ class listCourses(QDialog): #UI for the screen for courses
 
         self.xButton = self.findChild(QPushButton, "pushButton_4")
         self.xButton.clicked.connect(self.mainMenu)
+
+        self.searchButton = self.findChild(QPushButton, "pushButton_5")
+        self.searchButton.clicked.connect(self.searchCourse)
+        
+        self.clearButton = self.findChild(QPushButton, "pushButton_6")
+        self.clearButton.clicked.connect(self.clear)
 
         self.tableWidget.selectionModel().selectionChanged.connect(self.on_selectionChanged)
         self.allCourses()
@@ -270,6 +277,12 @@ class listCourses(QDialog): #UI for the screen for courses
         if myresult:
             for result in myresult:
                 return result
+
+    def clear(self): #Function to clear search box
+        self.allCourses()
+        self.codeTextEdit.setPlainText("")
+        self.nameTextEdit.setPlainText("")
+        self.searchTextEdit.setPlainText("")
                 
     def on_selectionChanged(self, selected, deselected): #Function for getting item when clicked
         for ix in selected.indexes():
@@ -327,6 +340,15 @@ class listCourses(QDialog): #UI for the screen for courses
         self.nameTextEdit.setPlainText("")
         
         self.Popup('Course Deleted')
+
+    def searchCourse(self): #Function for searching courses
+        info = self.searchTextEdit.toPlainText()
+        course = self.search(info)
+        if not course:
+            self.Popup('Course not Found')
+        else:
+            self.display(0, course)
+            self.tableWidget.setRowCount(1)
             
     def allCourses(self): #Function to display all courses on table
         mycursor.execute("SELECT * FROM course_info")
